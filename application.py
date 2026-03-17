@@ -69,10 +69,11 @@ def uploaded():
 
 @app.route('/files')
 def files():
-    path = f'{Path(__file__).parent}'
-    file_path = path + "\\files"
+    from pathlib import Path
+
+    file_path = Path(__file__).parent / "files"
+    fichier = [f.name for f in file_path.iterdir() if f.is_file()]
     print(file_path)
-    fichier = []
     for item in os.listdir(file_path):
         fichier.append(item)
     return render_template('files.html', files=fichier)
@@ -82,8 +83,12 @@ def files():
 def view_file():
     filename = request.args.get('file')  # Paramètre `file` passé dans l'URL
     base_path = os.path.abspath('./files')  # Répertoire sécurisé
+    if not filename:
+        abort(400, description="Missing file parameter")
     requested_path = os.path.abspath(os.path.join(base_path, filename))
-
+	
+    if os.path.commonpath([base_path, requested_path]) != base_path:
+        abort(403, description="Access to the requested file is not allowed")
 
     try:
         with open(requested_path, 'r') as file:
